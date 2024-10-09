@@ -46,6 +46,7 @@
                 $numberOfAttack = isset($_POST['numAttack']) ? intval($_POST['numAttack']) : 1;
             }
         }
+        $weapon = $_POST['attackType'];
         if ($rowError == "" && $colError == "" && $shipError == "" && $attackError == "") {
             $validated = true;
         }
@@ -66,6 +67,14 @@
                 <label for="numAttack">Number of attacks: </label>
                 <input type="number" name="numAttack" id="numAttack" value="" min="1">
                 <span style="color: red;"><?php echo $attackError; ?></span><br><br>
+                <label for="attackType">Attack type: </label>
+                <select name="attackType">
+                    <option value="">--Chose an option--</option>
+                    <option value="single" selected>Single bomb</option>
+                    <option value="rocket">Rocket bomb</option>
+                    <option value="hydro">Hydro bomb</option>
+                    <option value="napoleon">Napoleon bomb</option>
+                </select>
                 <button type="submit" name="form_submit">Generate Table</button>
             </form>
         </div>
@@ -73,20 +82,23 @@
         <div class="table-container">
             <?php
             if ($validated) {
-                $table = array_fill(0, $rows, array_fill(0, $cols, array_fill_keys(['class', 'id'], null)));
+
+                $start = putShip($rows, $cols, $numberOfShips);
+                generateTables($start);
                 $hits = [];
-                putShip($rows, $cols, $table, $numberOfShips);
-                generateTables($table, $rows, $cols);
-                attack($table, $numberOfAttack, $hits);
-                generateTables($table, $rows, $cols);
+                $afterAttack = attack($start, $numberOfAttack, $weapon);
+                generateTables($afterAttack);
+
                 foreach ($hits as $ship) {
                     echo "<p><strong>Name:</strong> " . $ship['name'] . '<strong> ===>  Coordinates:</strong>' . implode(', ', $ship['coordinates']) . "</p>";
                 }
             } else {
                 echo "Welcome to the game";
             }
-            function generateTables($table, $rows, $cols)
+            function generateTables($table)
             {
+                $rows = count((array)$table);
+                $cols = count((array)$table[0]);
                 echo '<table style="grid-template-columns: repeat($cols, 50px);grid-template-rows: repeat($rows, 50px);">';
                 echo '<thead>';
                 echo '<th></th>';
@@ -106,8 +118,9 @@
                 echo '</tbody>';
                 echo '</table>';
             }
-            function putShip($rows, $cols, &$array, $numberOfShips)
+            function putShip($rows, $cols, $numberOfShips)
             {
+                $table = array_fill(0, $rows, array_fill(0, $cols, array_fill_keys(['class', 'id'], null)));
                 $count = 1;
                 $id = 1;
                 while ($count <= $numberOfShips) {
@@ -117,61 +130,61 @@
                         $yc = rand(0, $cols - 1);
                         $shipSize = rand(2, 3);
                         $direction = rand(1, 4);
-                        if (canPlace($rows, $cols, $xr, $yc, $shipSize, $direction, $array)) {
+                        if (canPlace($rows, $cols, $xr, $yc, $shipSize, $direction, $table)) {
                             switch ($direction) {
                                 case 1:
                                     for ($i = 0; $i < $shipSize; $i++) {
                                         if ($i == 0) {
-                                            $array[$xr][$yc  + $i]['class'] = 'beginning-right';
-                                            $array[$xr][$yc  + $i]['id'] = ($id * 10) + $i;
+                                            $table[$xr][$yc  + $i]['class'] = 'beginning-right';
+                                            $table[$xr][$yc  + $i]['id'] = ($id * 10) + $i;
                                         } else if ($i == $shipSize - 1) {
-                                            $array[$xr][$yc  + $i]['class'] = 'arrow-right';
-                                            $array[$xr][$yc  + $i]['id'] = ($id * 10) + $i;
+                                            $table[$xr][$yc  + $i]['class'] = 'arrow-right';
+                                            $table[$xr][$yc  + $i]['id'] = ($id * 10) + $i;
                                         } else {
-                                            $array[$xr][$yc  + $i]['class'] = 'full';
-                                            $array[$xr][$yc  + $i]['id'] = ($id * 10) + $i;
+                                            $table[$xr][$yc  + $i]['class'] = 'full';
+                                            $table[$xr][$yc  + $i]['id'] = ($id * 10) + $i;
                                         }
                                     }
                                     break;
                                 case 2:
                                     for ($i = 0; $i < $shipSize; $i++) {
                                         if ($i == 0) {
-                                            $array[$xr + $i][$yc]['class'] = 'beginning-down';
-                                            $array[$xr + $i][$yc]['id'] = ($id * 10) + $i;
+                                            $table[$xr + $i][$yc]['class'] = 'beginning-down';
+                                            $table[$xr + $i][$yc]['id'] = ($id * 10) + $i;
                                         } else if ($i == $shipSize - 1) {
-                                            $array[$xr + $i][$yc]['class'] = 'arrow-down';
-                                            $array[$xr + $i][$yc]['id'] = ($id * 10) + $i;
+                                            $table[$xr + $i][$yc]['class'] = 'arrow-down';
+                                            $table[$xr + $i][$yc]['id'] = ($id * 10) + $i;
                                         } else {
-                                            $array[$xr + $i][$yc]['class'] = 'full';
-                                            $array[$xr + $i][$yc]['id'] = ($id * 10) + $i;
+                                            $table[$xr + $i][$yc]['class'] = 'full';
+                                            $table[$xr + $i][$yc]['id'] = ($id * 10) + $i;
                                         }
                                     }
                                     break;
                                 case 3:
                                     for ($i = 0; $i < $shipSize; $i++) {
                                         if ($i == 0) {
-                                            $array[$xr][$yc  - $i]['class'] = 'beginning-left';
-                                            $array[$xr][$yc  - $i]['id'] = ($id * 10) + $i;
+                                            $table[$xr][$yc  - $i]['class'] = 'beginning-left';
+                                            $table[$xr][$yc  - $i]['id'] = ($id * 10) + $i;
                                         } else if ($i == $shipSize - 1) {
-                                            $array[$xr][$yc  - $i]['class'] = 'arrow-left';
-                                            $array[$xr][$yc  - $i]['id'] = ($id * 10) + $i;
+                                            $table[$xr][$yc  - $i]['class'] = 'arrow-left';
+                                            $table[$xr][$yc  - $i]['id'] = ($id * 10) + $i;
                                         } else {
-                                            $array[$xr][$yc  - $i]['class'] = 'full';
-                                            $array[$xr][$yc  - $i]['id'] = ($id * 10) + $i;
+                                            $table[$xr][$yc  - $i]['class'] = 'full';
+                                            $table[$xr][$yc  - $i]['id'] = ($id * 10) + $i;
                                         }
                                     }
                                     break;
                                 case 4:
                                     for ($i = 0; $i < $shipSize; $i++) {
                                         if ($i == 0) {
-                                            $array[$xr - $i][$yc]['class'] = 'beginning-up';
-                                            $array[$xr - $i][$yc]['id'] = ($id * 10) + $i;
+                                            $table[$xr - $i][$yc]['class'] = 'beginning-up';
+                                            $table[$xr - $i][$yc]['id'] = ($id * 10) + $i;
                                         } else if ($i == $shipSize - 1) {
-                                            $array[$xr - $i][$yc]['class'] = 'arrow-up';
-                                            $array[$xr - $i][$yc]['id'] = ($id * 10) + $i;
+                                            $table[$xr - $i][$yc]['class'] = 'arrow-up';
+                                            $table[$xr - $i][$yc]['id'] = ($id * 10) + $i;
                                         } else {
-                                            $array[$xr - $i][$yc]['class'] = 'full';
-                                            $array[$xr - $i][$yc]['id'] = ($id * 10) + $i;
+                                            $table[$xr - $i][$yc]['class'] = 'full';
+                                            $table[$xr - $i][$yc]['id'] = ($id * 10) + $i;
                                         }
                                     }
                                     break;
@@ -182,6 +195,7 @@
                         }
                     }
                 }
+                return $table;
             }
             function canPlace($rows, $cols, $xr, $yc, $shipSize, $direction, $array)
             {
@@ -213,8 +227,9 @@
                 }
                 return true;
             }
-            function attack(&$table, $numberOfAttack, &$hits)
+            function attack($table, $numberOfAttack, $weapon)
             {
+                $hits = [];
                 $count = 0;
                 $shipClasses = [
                     'beginning-left',
@@ -228,47 +243,48 @@
                     'full',
                     'shot'
                 ];
+                $weapons = [
+                    [
+                        'name' => 'single',
+                        'power' => 1,
+                        'shape' => 'dot',
+                        'coordinates' => null
+                    ],
+                    [
+                        'name' => 'rocket',
+                        'power' => 2,
+                        'shape' => 'horizontal',
+                        'coordinates' => null
+                    ],
+                    [
+                        'name' => 'hydro',
+                        'power' => 4,
+                        'shape' => 'square',
+                        'coordinates' => null
+                    ],
+                    [
+                        'name' => 'napoleon',
+                        'power' => 3,
+                        'shape' => 'vertical',
+                        'coordinates' => null
+                    ]
+                ];
                 while ($count < $numberOfAttack) {
                     $rows = count((array)$table);
                     $cols = count((array)$table[0]);
                     $row = rand(0, $rows - 1);
                     $col = rand(0, $cols - 1);
-                    $weapon = [
-                        0 => [
-                            'name' => 'single',
-                            'power' => 1,
-                            'shape' => 'dot',
-                            'coordinates' => null
-                        ],
-                        1 => [
-                            'name' => 'rocket',
-                            'power' => 2,
-                            'shape' => 'horizontal',
-                            'coordinates' => null
-                        ],
-                        2 => [
-                            'name' => 'hydro',
-                            'power' => 4,
-                            'shape' => 'square',
-                            'coordinates' => null
-                        ],
-                        3 => [
-                            'name' => 'napoleon',
-                            'power' => 3,
-                            'shape' => 'vertical',
-                            'coordinates' => null
-                        ]
-                    ];
-                    $hit = $weapon[rand(0, 3)];
-                    $hit['coordinates'] = [$row, $col];
-                    switch ($hit['name']) {
+                    
+                    // $hit = $weapons[];
+                    // $hit['coordinates'] = [$row, $col];
+                    switch ($weapon) {
                         case 'single':
                             if (in_array($table[$row][$col]['class'], $shipClasses)) {
                                 $table[$row][$col]['class'] = "shot";
                             } else {
                                 $table[$row][$col]['class'] = "single";
                                 $count++;
-                                array_push($hits, $hit);
+                                array_push($hits, ['name' => $weapon,'coordinates' => [$row, $col]]);
                                 break;
                             }
                         case 'rocket':
@@ -284,7 +300,7 @@
                                     $table[$row][$col + 1]['class'] = "rocket";
                                 }
                                 $count++;
-                                array_push($hits, $hit);
+                                array_push($hits, ['name' => $weapon,'coordinates' => [$row, $col]]);
                                 break;
                             }
                             break;
@@ -311,7 +327,7 @@
                                     $table[$row + 1][$col]['class'] = "hydro";
                                 }
                                 $count++;
-                                array_push($hits, $hit);
+                                array_push($hits, ['name' => $weapon,'coordinates' => [$row, $col]]);
                                 break;
                             }
                             break;
@@ -333,12 +349,13 @@
                                     $table[$row + 2][$col]['class'] = "napoleon";
                                 }
                                 $count++;
-                                array_push($hits, $hit);
+                                array_push($hits, ['name' => $weapon,'coordinates' => [$row, $col]]);
                                 break;
                             }
                             break;
                     }
                 }
+                return $table;
             }
             ?>
         </div>
